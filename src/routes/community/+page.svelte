@@ -176,15 +176,6 @@
     font-size: 1.5rem;
   }
 
-  h3 a {
-    color: white;
-    text-decoration: none;
-    transition: color 0.3s ease;
-  }
-
-  h3 a:hover {
-    color: #ffcc00;
-  }
 
   p {
     font-size: 1rem;

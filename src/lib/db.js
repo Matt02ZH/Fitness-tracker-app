@@ -291,11 +291,6 @@ async function getStrengthWorkouts() {
   }
 }
 
-export default {
-  getCardioWorkouts,
-  getRecoveryWorkouts,
-  getStrengthWorkouts,
-};
 
 //////////////////////////////////////////
 // Export all functions
