@@ -1,12 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
-import db from '$lib/db.js';
-
-// Configure Cloudinary with environment variables
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import db from "$lib/db.js";
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -14,38 +6,47 @@ export const actions = {
     const formData = await request.formData();
 
     const newUser = {
-      name: formData.get('name'),
-      age: parseInt(formData.get('age'), 10),
-      email: formData.get('email'),
-      goal: formData.get('goal'),
+      name: formData.get("name"),
+      age: parseInt(formData.get("age"), 10),
+      email: formData.get("email"),
+      goal: formData.get("goal"),
     };
 
-    const profilePicture = formData.get('profilePicture');
-
-    // Upload the image to Cloudinary if provided
+    const profilePicture = formData.get("profilePicture");
     if (profilePicture && profilePicture.size > 0) {
       try {
-        const buffer = Buffer.from(await profilePicture.arrayBuffer());
-        const result = await cloudinary.uploader.upload_stream(
-          { resource_type: 'image', folder: 'fitness-tracker/users' },
-          (error, uploadResult) => {
-            if (error) throw new Error(`Cloudinary Upload Error: ${error.message}`);
-            newUser.profilePicture = uploadResult.secure_url;
+        const fileBuffer = Buffer.from(await profilePicture.arrayBuffer());
+
+        // Use Cloudinary unsigned upload endpoint
+        const uploadPreset = "unsigned_preset_name"; // Replace with your actual preset name
+        const cloudName = "dq5fgohkq"; // Your Cloudinary cloud name
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          {
+            method: "POST",
+            body: new FormData().append("file", new Blob([fileBuffer])).append("upload_preset", uploadPreset),
           }
         );
-        result.end(buffer); // Stream the buffer
+
+        const result = await response.json();
+
+        if (result.secure_url) {
+          newUser.profilePicture = result.secure_url; // Save the Cloudinary image URL
+        } else {
+          throw new Error(result.error?.message || "Image upload failed.");
+        }
       } catch (error) {
-        console.error('Error uploading image:', error.message);
-        return { success: false, error: 'Image upload failed' };
+        console.error("Error uploading image:", error.message);
+        return { success: false, error: "Image upload failed" };
       }
     }
 
     try {
-      await db.createUser(newUser); // Save user in the database
+      await db.createUser(newUser);
       return { success: true };
     } catch (error) {
-      console.error('Error creating user:', error.message);
-      return { success: false, error: 'Failed to save user to database' };
+      console.error("Error creating user:", error.message);
+      return { success: false, error: "Failed to save user to database" };
     }
   },
 };
