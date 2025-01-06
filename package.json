@@ -17,6 +17,7 @@
 	},
 	"dependencies": {
 		"chart.js": "^4.4.7",
+		"cloudinary": "^2.5.1",
 		"mongodb": "^4.1.1"
 	}
 }

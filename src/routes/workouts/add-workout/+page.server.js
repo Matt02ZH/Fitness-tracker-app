@@ -1,5 +1,12 @@
 import db from "$lib/db.js";
-import { saveImage } from "$lib/imageHandler.js";
+import { v2 as cloudinary } from "cloudinary";
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -27,9 +34,24 @@ export const actions = {
     let workoutImageUrl = null;
     if (workoutImage && workoutImage.size > 0) {
       try {
-        workoutImageUrl = await saveImage(workoutImage); // Save image
-      } catch (err) {
-        console.error("Error saving image:", err.message);
+        const buffer = Buffer.from(await workoutImage.arrayBuffer());
+        const result = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { resource_type: "image", folder: "fitness-tracker/workouts" },
+            (error, uploadResult) => {
+              if (error) {
+                reject(`Cloudinary Upload Error: ${error.message}`);
+              } else {
+                resolve(uploadResult);
+              }
+            }
+          );
+          stream.end(buffer); // Stream the image buffer to Cloudinary
+        });
+
+        workoutImageUrl = result.secure_url; // Store Cloudinary's secure URL
+      } catch (error) {
+        console.error("Error uploading image:", error);
         return { success: false, error: "Image upload failed" };
       }
     }
@@ -46,7 +68,7 @@ export const actions = {
       return { success: true };
     } catch (error) {
       console.error("Error creating workout:", error.message);
-      return { success: false };
+      return { success: false, error: "Failed to save workout to database" };
     }
   },
 };
