@@ -1,3 +1,6 @@
+import db from "$lib/db.js";
+import { saveImage } from "$lib/imageHandler.js";
+
 /** @type {import('./$types').Actions} */
 export const actions = {
   create: async ({ request }) => {
@@ -24,28 +27,9 @@ export const actions = {
     let workoutImageUrl = null;
     if (workoutImage && workoutImage.size > 0) {
       try {
-        const fileBuffer = Buffer.from(await workoutImage.arrayBuffer());
-
-        // Use Cloudinary unsigned upload endpoint
-        const uploadPreset = "unsigned_preset_name"; // Replace with your actual preset name
-        const cloudName = "dq5fgohkq"; // Your Cloudinary cloud name
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: new FormData().append("file", new Blob([fileBuffer])).append("upload_preset", uploadPreset),
-          }
-        );
-
-        const result = await response.json();
-
-        if (result.secure_url) {
-          workoutImageUrl = result.secure_url; // Save the Cloudinary image URL
-        } else {
-          throw new Error(result.error?.message || "Image upload failed.");
-        }
-      } catch (error) {
-        console.error("Error uploading image:", error);
+        workoutImageUrl = await saveImage(workoutImage); // Save image
+      } catch (err) {
+        console.error("Error saving image:", err.message);
         return { success: false, error: "Image upload failed" };
       }
     }
@@ -62,7 +46,7 @@ export const actions = {
       return { success: true };
     } catch (error) {
       console.error("Error creating workout:", error.message);
-      return { success: false, error: "Failed to save workout to database" };
+      return { success: false };
     }
   },
 };

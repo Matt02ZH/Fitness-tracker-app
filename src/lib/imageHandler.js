@@ -1,23 +1,24 @@
+import fs from "fs";
+import path from "path";
+
 export async function saveImage(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "unsigned_preset_name");
-  formData.append("cloud_name", "dq5fgohkq"); 
+  const fileName = `${Date.now()}-${file.name}`;
+  const uploadPath = path.resolve("static/uploads", fileName);
 
   try {
-    const response = await fetch(`https://api.cloudinary.com/v1_1/dq5fgohkq/image/upload`, {
-      method: "POST",
-      body: formData,
-    });
+    // Convert the file to a Buffer
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    if (!response.ok) {
-      throw new Error("Failed to upload image to Cloudinary");
-    }
+    // Ensure the uploads directory exists
+    fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
 
-    const data = await response.json();
-    return data.secure_url; // Return the image URL for storage
+    // Write the file synchronously
+    fs.writeFileSync(uploadPath, fileBuffer);
+
+    // Return the relative path to the saved image
+    return `/uploads/${fileName}`;
   } catch (error) {
-    console.error("Error uploading to Cloudinary:", error.message);
-    throw error;
+    console.error("Error saving image:", error.message);
+    throw error; // Propagate the error to the calling function
   }
 }

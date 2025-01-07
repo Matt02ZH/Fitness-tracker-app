@@ -1,3 +1,7 @@
+<script>
+  export let form; // Ensure form is exported for reactivity
+</script>
+
 <main>
   <section class="hero">
     <h1>Add a New User</h1>
